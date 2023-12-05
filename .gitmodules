@@ -1,0 +1,6 @@
+[submodule "soundtouch"]
+	path = soundtouch
+	url = https://codeberg.org/soundtouch/soundtouch.git
+[submodule "rubberband"]
+	path = rubberband
+	url = https://github.com/breakfastquay/rubberband.git

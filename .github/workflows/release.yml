@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  release:
+    types:
+      - created
+
+env:
+  BUILD_TYPE: release
+
+jobs:
+  build-windows:
+    name: Build (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Visual Studio 17 2022" -A x64 .. -DCMAKE_BUILD_TYPE=MinSizeRel
+          cmake --build . --config MinSizeRel
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ github.workspace }}/build/libEIMTimeStretchers.dll
+          tag: ${{ github.ref }}
+          asset_name: libEIMTimeStretchers.dll
+
+  build-macos:
+    name: Build (MacOS)
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          brew install ninja
+          cmake -G Ninja .. -DCMAKE_BUILD_TYPE=MinSizeRel
+          cmake --build . --config MinSizeRel
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ github.workspace }}/build/libEIMTimeStretchers.dylib
+          tag: ${{ github.ref }}
+          asset_name: libEIMTimeStretchers.dylib
+
+# Consider adding a Linux build here, I don't have a Linux machine to test on though
