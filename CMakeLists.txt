@@ -12,7 +12,7 @@ endif ()
 
 # check is Release build or MinSizeRel build
 if (CMAKE_BUILD_TYPE MATCHES Release OR CMAKE_BUILD_TYPE MATCHES MinSizeRel)
-    add_definitions(-DNDEBUG -NO_THREAD_CHECKS -NO_TIMING)
+    add_definitions(-DNDEBUG -DNO_THREAD_CHECKS -DNO_TIMING)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -ftree-vectorize")
 endif ()
 
