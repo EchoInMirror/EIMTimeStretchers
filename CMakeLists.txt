@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.24)
 project(EIMTimeStretchers)
 
 set(CMAKE_CXX_STANDARD 23)
 
 if (WIN32)
-    add_definitions(-D_WIN32 -DNOMINMAX -D_USE_MATH_DEFINES -DGETOPT_API=)
+    add_definitions(-D_WIN32 -DNOMINMAX -D_USE_MATH_DEFINES -DUSE_BUILTIN_FFT -DUSE_BQRESAMPLER -DGETOPT_API=0)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MD")
 elseif (APPLE)
     add_definitions(-DUSE_BQRESAMPLER -DHAVE_VDSP -DNO_THREAD_CHECKS -DUSE_PTHREADS -DNO_TIMING -DMALLOC_IS_ALIGNED)
@@ -31,7 +31,7 @@ file(GLOB_RECURSE RUBBERBAND_SRC_FILES
 add_library(EIMTimeStretchers SHARED ${SRC_FILES} ${RUBBERBAND_SRC_FILES})
 
 if (WIN32)
-    target_link_libraries(EIMTimeStretchers PRIVATE SoundTouch "-lippsmt" '-lippvmmt', '-lippcoremt)
+    target_link_libraries(EIMTimeStretchers PRIVATE SoundTouch)
 elseif (APPLE)
     target_link_libraries(EIMTimeStretchers PRIVATE "-framework Accelerate" SoundTouch pthread)
 endif ()

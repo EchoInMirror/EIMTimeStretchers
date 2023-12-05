@@ -23,14 +23,14 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 17 2022" -A x64 .. -DCMAKE_BUILD_TYPE=MinSizeRel
-          cmake --build . --config MinSizeRel
+          cmake -G "Visual Studio 17 2022" -A x64 .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ github.workspace }}/build/libEIMTimeStretchers.dll
+          file: ${{ github.workspace }}/build/Release/EIMTimeStretchers.dll
           tag: ${{ github.ref }}
           asset_name: libEIMTimeStretchers.dll
 
@@ -49,8 +49,8 @@ jobs:
           mkdir build
           cd build
           brew install ninja
-          cmake -G Ninja .. -DCMAKE_BUILD_TYPE=MinSizeRel
-          cmake --build . --config MinSizeRel
+          cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
