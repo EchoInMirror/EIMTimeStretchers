@@ -36,8 +36,7 @@ jobs:
 
   build-macos-m1:
     name: Build (MacOS Apple Silicon)
-    runs-on: macos-latest-xlarge
-    if: ${{ false }}
+    runs-on: macos-latest
 
     steps:
       - name: Check out git repository
@@ -50,7 +49,7 @@ jobs:
           mkdir build
           cd build
           brew install ninja
-          cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Release
+          cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
           cmake --build . --config Release
 
       - name: Upload binaries to release

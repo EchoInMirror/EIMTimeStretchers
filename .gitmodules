@@ -4,3 +4,9 @@
 [submodule "rubberband"]
 	path = rubberband
 	url = https://github.com/breakfastquay/rubberband.git
+[submodule "sleef"]
+	path = sleef
+	url = https://github.com/shibatch/sleef.git
+[submodule "libsamplerate"]
+	path = libsamplerate
+	url = https://github.com/libsndfile/libsamplerate.git
