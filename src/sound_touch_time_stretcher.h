@@ -40,16 +40,18 @@ namespace eim {
         }
         void setSpeedRatio(float newSpeed) noexcept override {
             soundTouch.setTempo(1.0 / newSpeed);
+            inputOutputSampleRatio = soundTouch.getInputOutputSampleRatio();
         }
         void setSemitones(float semitones) noexcept override {
             soundTouch.setPitchSemiTones(semitones);
+            inputOutputSampleRatio = soundTouch.getInputOutputSampleRatio();
         }
         int getMaxFramesNeeded() noexcept override {
             return 8192;
         }
         int getFramesNeeded() noexcept override {
             auto numAvailable = (int)soundTouch.numSamples();
-            auto numRequiredForOneBlock = (int) std::round(samplesPerBlock * soundTouch.getInputOutputSampleRatio());
+            auto numRequiredForOneBlock = (int)std::round(this->samplesPerBlock * inputOutputSampleRatio);
 
             return std::max(0, numRequiredForOneBlock - numAvailable);
         }
@@ -59,12 +61,12 @@ namespace eim {
     private:
         soundtouch::SoundTouch soundTouch;
         int samplesPerBlock = 0;
+        double inputOutputSampleRatio = 1.0;
         bool _betterQuality;
 
         int readSamples(float* out) noexcept {
             auto toRead = (unsigned int)std::min(samplesPerBlock, (int) soundTouch.numSamples());
-            auto gg = toRead ? (int) soundTouch.receiveSamples(out, toRead) : 0;
-            return gg;;
+            return toRead ? (int) soundTouch.receiveSamples(out, toRead) : 0;
         }
     };
 }
