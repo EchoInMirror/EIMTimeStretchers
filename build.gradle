@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'com.eimsound.dsp.timestretchers'
-version = '1.0'
+version = System.getenv('VERSION') ?: '0.0.0'
 
 sourceCompatibility = JavaVersion.VERSION_19
 targetCompatibility = JavaVersion.VERSION_19
@@ -37,6 +37,9 @@ dependencies {
 
 static def downloadLib(String ext) {
     def file = "src/main/resources/eim-time-stretchers/libEIMTimeStretchers$ext"
+    if (System.getenv('JITPACK') == 'true') {
+        file = '/home/jitpack/build/' + file
+    }
     if (new File(file).exists()) {
         return
     }
