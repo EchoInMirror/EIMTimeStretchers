@@ -123,9 +123,16 @@ EXPORT int fft_get_size(RubberBand::FFT *fft) {
 }
 
 char fftDefaultImplementation[256] = {0};
-EXPORT const char* fft_get_default_implementation() {
+EXPORT const char* fft_get_implementations() {
     if (fftDefaultImplementation[0] == 0) {
-        strcpy(fftDefaultImplementation, RubberBand::FFT::getDefaultImplementation().c_str());
+        int i = 0;
+        for (auto& impl : RubberBand::FFT::getImplementations()) {
+            if (i > 0) {
+                strcat(fftDefaultImplementation, ",");
+            }
+            strcat(fftDefaultImplementation, impl.c_str());
+            i++;
+        }
     }
     return fftDefaultImplementation;
 }
@@ -178,5 +185,21 @@ EXPORT double resampler_get_effective_ratio(RubberBand::Resampler *resampler, do
 
 EXPORT void resampler_reset(RubberBand::Resampler *resampler) {
     resampler->reset();
+}
+
+EXPORT const char* resampler_get_implementation() {
+#ifdef HAVE_IPP
+    return "ipp";
+#elifdef USE_SPEEX
+    return "speex";
+#elifdef HAVE_LIBSPEEXDSP
+    return "speexdsp";
+#elifdef USE_BQRESAMPLER
+    return "bqresampler";
+#elifdef HAVE_LIBSAMPLERATE
+    return "libsamplerate";
+#else
+    return "unknown";
+#endif
 }
 }

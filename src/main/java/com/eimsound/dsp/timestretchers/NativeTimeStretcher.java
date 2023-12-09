@@ -18,7 +18,6 @@ public final class NativeTimeStretcher implements AutoCloseable {
     private final String name;
     private float speedRatio, semitones, sourceSampleRate;
 
-
     private static MethodHandle get_all_time_stretchers; // () -> char*
     private static MethodHandle create_time_stretcher; // (char*) -> void*
     private static MethodHandle destroy_time_stretcher; // (void*) -> void
