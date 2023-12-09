@@ -34,7 +34,7 @@ add_subdirectory(libsamplerate)
 add_subdirectory(soundtouch)
 include_directories(stubs)
 
-file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h)
+file(GLOB_RECURSE SRC_FILES lib/*.cpp lib/*.h)
 file(GLOB_RECURSE RUBBERBAND_SRC_FILES
         rubberband/src/common/*.cpp rubberband/src/common/*.h
         rubberband/src/finer/*.cpp rubberband/src/finer/*.h

@@ -1,0 +1,77 @@
+import java.security.MessageDigest
+
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+group = 'com.eimsound.dsp.timestretchers'
+version = '1.0'
+
+sourceCompatibility = JavaVersion.VERSION_19
+targetCompatibility = JavaVersion.VERSION_19
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).each {
+    it.options.compilerArgs.add('--enable-preview')
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.jetbrains:annotations:24.0.0'
+}
+
+static def downloadLib(String ext) {
+    def file = "src/main/resources/eim-time-stretchers/libEIMTimeStretchers$ext"
+    if (new File(file).exists()) {
+        return
+    }
+    new FileOutputStream(file).withCloseable { out ->
+        new URL("https://github.com/EchoInMirror/EIMTimeStretchers/releases/latest/download/libEIMTimeStretchers$ext")
+                .withInputStream { input ->
+                    out << input
+                    // calc sha256 then write to .sha256 file
+                    new File(file + '.sha256').withPrintWriter { writer ->
+                        writer.print(sha256(file))
+                    }
+                }
+    }
+}
+
+static def sha256(String file) {
+    def messageDigest = MessageDigest.getInstance("SHA-256")
+    new FileInputStream(file).withCloseable { input ->
+        byte[] buffer = new byte[8192]
+        int read
+        while ((read = input.read(buffer)) != -1) {
+            messageDigest.update(buffer, 0, read)
+        }
+    }
+    return messageDigest.digest().collect { String.format("%02x", it) }.join()
+}
+
+task downloadLibs(type: Copy) {
+    def dir = new File('src/main/resources/eim-time-stretchers')
+    if (!dir.exists()) dir.mkdirs()
+    downloadLib('-x86.dylib')
+    downloadLib('.dylib')
+    downloadLib('.dll')
+}
+
+tasks.withType(JavaCompile) {
+    dependsOn downloadLibs
+}

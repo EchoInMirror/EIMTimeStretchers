@@ -3,3 +3,5 @@ cmake-build-release
 build
 .idea
 .DS_Store
+.gradle
+src/main/resources
