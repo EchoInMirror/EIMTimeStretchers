@@ -13,8 +13,9 @@ public final class NativeTimeStretcher implements AutoCloseable {
     private final Addressable pointer;
     private Addressable inputBuffersPtr, outputBuffersPtr;
     private FloatBuffer inputBuffers, outputBuffers;
-    private int inputBufferSize, numChannels, samplesPerBlock;
-    private boolean isPlanar, isClosed, isInitialised, isRealtime;
+    private int inputBufferSize, numChannels, samplesPerBlock, maxFramesNeeded;
+    private final boolean isPlanar;
+    private boolean isClosed, isInitialised, isRealtime;
     private final String name;
     private float speedRatio, semitones, sourceSampleRate;
 
@@ -28,10 +29,11 @@ public final class NativeTimeStretcher implements AutoCloseable {
     private static MethodHandle time_stretcher_set_semitones; // (void*, float) -> void
     private static MethodHandle time_stretcher_get_max_frames_needed; // (void*) -> int
     private static MethodHandle time_stretcher_get_frames_needed; // (void*) -> int
-    private static MethodHandle time_stretcher_is_initialized; // (void*) -> bool
+//    private static MethodHandle time_stretcher_is_initialized; // (void*) -> bool
     private static MethodHandle time_stretcher_initialise; // (void*, float, int, int, bool) -> void
     private static MethodHandle time_stretcher_is_planar; // (void*) -> bool
 
+    @SuppressWarnings("CommentedOutCode")
     private static void init() {
         if (get_all_time_stretchers != null) return;
         var lib = NativeLibrary.getLookup();
@@ -107,13 +109,13 @@ public final class NativeTimeStretcher implements AutoCloseable {
                         ValueLayout.ADDRESS
                 )
         );
-        time_stretcher_is_initialized = linker.downcallHandle(
-                lib.lookup("time_stretcher_is_initialized").orElseThrow(),
-                FunctionDescriptor.of(
-                        ValueLayout.JAVA_BOOLEAN,
-                        ValueLayout.ADDRESS
-                )
-        );
+//        time_stretcher_is_initialized = linker.downcallHandle(
+//                lib.lookup("time_stretcher_is_initialized").orElseThrow(),
+//                FunctionDescriptor.of(
+//                        ValueLayout.JAVA_BOOLEAN,
+//                        ValueLayout.ADDRESS
+//                )
+//        );
         time_stretcher_initialise = linker.downcallHandle(
                 lib.lookup("time_stretcher_initialise").orElseThrow(),
                 FunctionDescriptor.ofVoid(
@@ -148,6 +150,7 @@ public final class NativeTimeStretcher implements AutoCloseable {
         init();
         try {
             pointer = (MemoryAddress) create_time_stretcher.invokeExact((Addressable) session.allocateUtf8String(name));
+            isPlanar = (boolean) time_stretcher_is_planar.invokeExact(pointer);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -166,31 +169,14 @@ public final class NativeTimeStretcher implements AutoCloseable {
     }
 
     public int getMaxFramesNeeded() {
-        if (isClosed || !isInitialised) return 0;
-        try {
-            return (int) time_stretcher_get_max_frames_needed.invokeExact(pointer);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        return isClosed || !isInitialised ? 0 : maxFramesNeeded;
     }
 
     public boolean isInitialised() {
-        if (isClosed) return false;
-        try {
-            return (boolean) time_stretcher_is_initialized.invokeExact(pointer);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        return isInitialised;
     }
 
-    public boolean isPlanar() {
-        if (isClosed || !isInitialised) return false;
-        try {
-            return (boolean) time_stretcher_is_planar.invokeExact(pointer);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
+    public boolean isPlanar() { return isPlanar; }
 
     public int getInputBufferSize() {
         return inputBufferSize;
@@ -260,10 +246,10 @@ public final class NativeTimeStretcher implements AutoCloseable {
         isInitialised = true;
         try {
             time_stretcher_initialise.invokeExact(pointer, sourceSampleRate, samplesPerBlock, numChannels, isRealtime);
+            maxFramesNeeded = (int) time_stretcher_get_max_frames_needed.invokeExact(pointer);
             var ptr = session.allocateArray(ValueLayout.JAVA_FLOAT, (long) samplesPerBlock * numChannels);
             outputBuffers = ptr.asByteBuffer().order(ByteOrder.nativeOrder()).asFloatBuffer();
             outputBuffersPtr = ptr;
-            isPlanar = (boolean) time_stretcher_is_planar.invokeExact(pointer);
             if (speedRatio != 1F) time_stretcher_set_speed_ratio.invokeExact(pointer, speedRatio);
             if (semitones != 0F) time_stretcher_set_semitones.invokeExact(pointer, semitones);
         } catch (Throwable e) {
@@ -273,15 +259,14 @@ public final class NativeTimeStretcher implements AutoCloseable {
 
     public int process(float[] @NotNull [] input, float[] @NotNull [] output, int numSamples) {
         if (isClosed || !isInitialised) return 0;
-        if (inputBufferSize < numSamples * numChannels) {
-            inputBufferSize = Math.max(numSamples, getMaxFramesNeeded()) * numChannels;
+        int max = numSamples * numChannels;
+        if (inputBufferSize < max) {
+            inputBufferSize = max;
             var ptr = session.allocateArray(ValueLayout.JAVA_FLOAT, inputBufferSize);
             inputBuffers = ptr.asByteBuffer().order(ByteOrder.nativeOrder()).asFloatBuffer();
             inputBuffersPtr = ptr;
         }
-        inputBuffers.rewind();
-        if (isPlanar) for (int i = 0; i < numChannels; i++) inputBuffers.put(input[i], 0, numSamples);
-        else for (int i = 0; i < numSamples; i++) for (int j = 0; j < numChannels; j++) inputBuffers.put(input[j][i]);
+        putInput(input, numSamples);
         try {
             var ret = (int) time_stretcher_process.invokeExact(pointer, inputBuffersPtr, outputBuffersPtr, numSamples);
             readOutput(output, ret);
@@ -326,5 +311,11 @@ public final class NativeTimeStretcher implements AutoCloseable {
         outputBuffers.rewind();
         if (isPlanar) for (int i = 0; i < numChannels; i++) outputBuffers.get(output[i], 0, numSamples);
         else for (int i = 0; i < numSamples; i++) for (int j = 0; j < numChannels; j++) output[j][i] = outputBuffers.get();
+    }
+
+    private void putInput(float[][] input, int numSamples) {
+        inputBuffers.rewind();
+        if (isPlanar) for (int i = 0; i < numChannels; i++) inputBuffers.put(input[i], 0, numSamples);
+        else for (int i = 0; i < numSamples; i++) for (int j = 0; j < numChannels; j++) inputBuffers.put(input[j][i]);
     }
 }
