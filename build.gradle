@@ -35,27 +35,23 @@ dependencies {
     implementation 'org.jetbrains:annotations:24.0.0'
 }
 
-static def downloadLib(String ext) {
-    def file = "src/main/resources/eim-time-stretchers/libEIMTimeStretchers$ext"
-    if (System.getenv('JITPACK') == 'true') {
-        file = '/home/jitpack/build/' + file
-    }
-    if (new File(file).exists()) {
-        return
-    }
+def downloadLib(String ext) {
+    def file = new File("$projectDir/src/main/resources/eim-time-stretchers/libEIMTimeStretchers$ext")
+    if (file.exists()) return
+    file.parentFile.mkdirs()
     new FileOutputStream(file).withCloseable { out ->
         new URL("https://github.com/EchoInMirror/EIMTimeStretchers/releases/latest/download/libEIMTimeStretchers$ext")
                 .withInputStream { input ->
                     out << input
                     // calc sha256 then write to .sha256 file
-                    new File(file + '.sha256').withPrintWriter { writer ->
+                    new File(file.absolutePath + '.sha256').withPrintWriter { writer ->
                         writer.print(sha256(file))
                     }
                 }
     }
 }
 
-static def sha256(String file) {
+static def sha256(File file) {
     def messageDigest = MessageDigest.getInstance("SHA-256")
     new FileInputStream(file).withCloseable { input ->
         byte[] buffer = new byte[8192]
@@ -68,8 +64,6 @@ static def sha256(String file) {
 }
 
 task downloadLibs(type: Copy) {
-    def dir = new File('src/main/resources/eim-time-stretchers')
-    if (!dir.exists()) dir.mkdirs()
     downloadLib('-x86.dylib')
     downloadLib('.dylib')
     downloadLib('.dll')
