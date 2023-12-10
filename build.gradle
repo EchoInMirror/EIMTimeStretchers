@@ -67,6 +67,7 @@ task downloadLibs(type: Copy) {
     downloadLib('-x86.dylib')
     downloadLib('.dylib')
     downloadLib('.dll')
+    downloadLib('.so')
 }
 
 tasks.withType(JavaCompile) {
