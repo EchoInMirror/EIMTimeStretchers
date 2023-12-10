@@ -87,8 +87,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Build
+      - name: Set up Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Build
         run: |
           mkdir build
           cd build
