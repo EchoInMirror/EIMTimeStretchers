@@ -1,6 +1,6 @@
 package com.eimsound.dsp.timestretchers;
 
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.Arena;
 import java.lang.foreign.SymbolLookup;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,7 +9,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 
 final class NativeLibrary {
-    private static MemorySession session;
     private static final String fileName;
     private static SymbolLookup lookup;
 
@@ -23,8 +22,7 @@ final class NativeLibrary {
     }
 
     static SymbolLookup getLookup() {
-        if (session == null) session = MemorySession.openImplicit();
-        if (lookup == null) lookup = SymbolLookup.libraryLookup(getLibraryPath(), session);
+        if (lookup == null) lookup = SymbolLookup.libraryLookup(getLibraryPath(), Arena.global());
         return lookup;
     }
 

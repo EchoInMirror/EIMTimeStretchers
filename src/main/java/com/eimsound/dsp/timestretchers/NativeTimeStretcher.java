@@ -9,9 +9,9 @@ import java.nio.FloatBuffer;
 
 @SuppressWarnings("unused")
 public final class NativeTimeStretcher implements AutoCloseable {
-    private final MemorySession session = MemorySession.openShared();
-    private final Addressable pointer;
-    private Addressable inputBuffersPtr, outputBuffersPtr;
+    private final Arena arena = Arena.ofShared();
+    private final MemorySegment pointer;
+    private MemorySegment inputBuffersPtr, outputBuffersPtr;
     private FloatBuffer inputBuffers, outputBuffers;
     private int inputBufferSize, numChannels, samplesPerBlock, maxFramesNeeded;
     private final boolean isPlanar;
@@ -39,26 +39,26 @@ public final class NativeTimeStretcher implements AutoCloseable {
         var lib = NativeLibrary.getLookup();
         var linker = Linker.nativeLinker();
         get_all_time_stretchers = linker.downcallHandle(
-                lib.lookup("get_all_time_stretchers").orElseThrow(),
+                lib.find("get_all_time_stretchers").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.ADDRESS
                 )
         );
         create_time_stretcher = linker.downcallHandle(
-                lib.lookup("create_time_stretcher").orElseThrow(),
+                lib.find("create_time_stretcher").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.ADDRESS,
                         ValueLayout.ADDRESS
                 )
         );
         destroy_time_stretcher = linker.downcallHandle(
-                lib.lookup("destroy_time_stretcher").orElseThrow(),
+                lib.find("destroy_time_stretcher").orElseThrow(),
                 FunctionDescriptor.ofVoid(
                         ValueLayout.ADDRESS
                 )
         );
         time_stretcher_process = linker.downcallHandle(
-                lib.lookup("time_stretcher_process").orElseThrow(),
+                lib.find("time_stretcher_process").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_INT,
                         ValueLayout.ADDRESS,
@@ -68,13 +68,13 @@ public final class NativeTimeStretcher implements AutoCloseable {
                 )
         );
         time_stretcher_reset = linker.downcallHandle(
-                lib.lookup("time_stretcher_reset").orElseThrow(),
+                lib.find("time_stretcher_reset").orElseThrow(),
                 FunctionDescriptor.ofVoid(
                         ValueLayout.ADDRESS
                 )
         );
         time_stretcher_flush = linker.downcallHandle(
-                lib.lookup("time_stretcher_flush").orElseThrow(),
+                lib.find("time_stretcher_flush").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_INT,
                         ValueLayout.ADDRESS,
@@ -82,42 +82,42 @@ public final class NativeTimeStretcher implements AutoCloseable {
                 )
         );
         time_stretcher_set_speed_ratio = linker.downcallHandle(
-                lib.lookup("time_stretcher_set_speed_ratio").orElseThrow(),
+                lib.find("time_stretcher_set_speed_ratio").orElseThrow(),
                 FunctionDescriptor.ofVoid(
                         ValueLayout.ADDRESS,
                         ValueLayout.JAVA_FLOAT
                 )
         );
         time_stretcher_set_semitones = linker.downcallHandle(
-                lib.lookup("time_stretcher_set_semitones").orElseThrow(),
+                lib.find("time_stretcher_set_semitones").orElseThrow(),
                 FunctionDescriptor.ofVoid(
                         ValueLayout.ADDRESS,
                         ValueLayout.JAVA_FLOAT
                 )
         );
         time_stretcher_get_max_frames_needed = linker.downcallHandle(
-                lib.lookup("time_stretcher_get_max_frames_needed").orElseThrow(),
+                lib.find("time_stretcher_get_max_frames_needed").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_INT,
                         ValueLayout.ADDRESS
                 )
         );
         time_stretcher_get_frames_needed = linker.downcallHandle(
-                lib.lookup("time_stretcher_get_frames_needed").orElseThrow(),
+                lib.find("time_stretcher_get_frames_needed").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_INT,
                         ValueLayout.ADDRESS
                 )
         );
 //        time_stretcher_is_initialized = linker.downcallHandle(
-//                lib.lookup("time_stretcher_is_initialized").orElseThrow(),
+//                lib.find("time_stretcher_is_initialized").orElseThrow(),
 //                FunctionDescriptor.of(
 //                        ValueLayout.JAVA_BOOLEAN,
 //                        ValueLayout.ADDRESS
 //                )
 //        );
         time_stretcher_initialise = linker.downcallHandle(
-                lib.lookup("time_stretcher_initialise").orElseThrow(),
+                lib.find("time_stretcher_initialise").orElseThrow(),
                 FunctionDescriptor.ofVoid(
                         ValueLayout.ADDRESS,
                         ValueLayout.JAVA_FLOAT,
@@ -127,7 +127,7 @@ public final class NativeTimeStretcher implements AutoCloseable {
                 )
         );
         time_stretcher_is_planar = linker.downcallHandle(
-                lib.lookup("time_stretcher_is_planar").orElseThrow(),
+                lib.find("time_stretcher_is_planar").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_BOOLEAN,
                         ValueLayout.ADDRESS
@@ -139,7 +139,7 @@ public final class NativeTimeStretcher implements AutoCloseable {
     public static String @NotNull [] getAllTimeStretcherNames() {
         init();
         try {
-            return ((MemoryAddress) get_all_time_stretchers.invokeExact()).getUtf8String(0L).split(",");
+            return ((MemorySegment) get_all_time_stretchers.invokeExact()).getUtf8String(0L).split(",");
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -149,7 +149,7 @@ public final class NativeTimeStretcher implements AutoCloseable {
     public NativeTimeStretcher(@NotNull String name, float speedRatio, float semitones) {
         init();
         try {
-            pointer = (MemoryAddress) create_time_stretcher.invokeExact((Addressable) session.allocateUtf8String(name));
+            pointer = (MemorySegment) create_time_stretcher.invokeExact(arena.allocateUtf8String(name));
             isPlanar = (boolean) time_stretcher_is_planar.invokeExact(pointer);
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -247,7 +247,7 @@ public final class NativeTimeStretcher implements AutoCloseable {
         try {
             time_stretcher_initialise.invokeExact(pointer, sourceSampleRate, samplesPerBlock, numChannels, isRealtime);
             maxFramesNeeded = (int) time_stretcher_get_max_frames_needed.invokeExact(pointer);
-            var ptr = session.allocateArray(ValueLayout.JAVA_FLOAT, (long) samplesPerBlock * numChannels);
+            var ptr = arena.allocateArray(ValueLayout.JAVA_FLOAT, (long) samplesPerBlock * numChannels);
             outputBuffers = ptr.asByteBuffer().order(ByteOrder.nativeOrder()).asFloatBuffer();
             outputBuffersPtr = ptr;
             if (speedRatio != 1F) time_stretcher_set_speed_ratio.invokeExact(pointer, speedRatio);
@@ -262,7 +262,7 @@ public final class NativeTimeStretcher implements AutoCloseable {
         int max = numSamples * numChannels;
         if (inputBufferSize < max) {
             inputBufferSize = max;
-            var ptr = session.allocateArray(ValueLayout.JAVA_FLOAT, inputBufferSize);
+            var ptr = arena.allocateArray(ValueLayout.JAVA_FLOAT, inputBufferSize);
             inputBuffers = ptr.asByteBuffer().order(ByteOrder.nativeOrder()).asFloatBuffer();
             inputBuffersPtr = ptr;
         }
@@ -285,7 +285,7 @@ public final class NativeTimeStretcher implements AutoCloseable {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         } finally {
-            session.close();
+            arena.close();
         }
     }
 

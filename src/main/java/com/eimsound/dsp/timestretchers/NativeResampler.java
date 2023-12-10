@@ -8,7 +8,7 @@ import java.lang.invoke.MethodHandle;
 @SuppressWarnings("unused")
 public final class NativeResampler implements AutoCloseable {
     private boolean isClosed = false;
-    private final Addressable pointer;
+    private final MemorySegment pointer;
 
     private static MethodHandle resampler_init; // void* *resampler_init(int channels, double initialSampleRate, int quality, bool isRatioOftenChanging, bool isSuddenRatioChange)
     private static MethodHandle resampler_destroy; // void resampler_destroy(void* *resampler)
@@ -24,7 +24,7 @@ public final class NativeResampler implements AutoCloseable {
         var lib = NativeLibrary.getLookup();
         var linker = Linker.nativeLinker();
         resampler_init = linker.downcallHandle(
-                lib.lookup("resampler_init").orElseThrow(),
+                lib.find("resampler_init").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.ADDRESS,
                         ValueLayout.JAVA_INT,
@@ -35,13 +35,13 @@ public final class NativeResampler implements AutoCloseable {
                 )
         );
         resampler_destroy = linker.downcallHandle(
-                lib.lookup("resampler_destroy").orElseThrow(),
+                lib.find("resampler_destroy").orElseThrow(),
                 FunctionDescriptor.ofVoid(
                         ValueLayout.ADDRESS
                 )
         );
         resampler_resample = linker.downcallHandle(
-                lib.lookup("resampler_resample").orElseThrow(),
+                lib.find("resampler_resample").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_INT,
                         ValueLayout.ADDRESS,
@@ -53,7 +53,7 @@ public final class NativeResampler implements AutoCloseable {
                 )
         );
         resampler_resample_interleaved = linker.downcallHandle(
-                lib.lookup("resampler_resample_interleaved").orElseThrow(),
+                lib.find("resampler_resample_interleaved").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_INT,
                         ValueLayout.ADDRESS,
@@ -65,14 +65,14 @@ public final class NativeResampler implements AutoCloseable {
                 )
         );
         resampler_get_channel_count = linker.downcallHandle(
-                lib.lookup("resampler_get_channel_count").orElseThrow(),
+                lib.find("resampler_get_channel_count").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_INT,
                         ValueLayout.ADDRESS
                 )
         );
         resampler_get_effective_ratio = linker.downcallHandle(
-                lib.lookup("resampler_get_effective_ratio").orElseThrow(),
+                lib.find("resampler_get_effective_ratio").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.JAVA_DOUBLE,
                         ValueLayout.ADDRESS,
@@ -80,13 +80,13 @@ public final class NativeResampler implements AutoCloseable {
                 )
         );
         resampler_reset = linker.downcallHandle(
-                lib.lookup("resampler_reset").orElseThrow(),
+                lib.find("resampler_reset").orElseThrow(),
                 FunctionDescriptor.ofVoid(
                         ValueLayout.ADDRESS
                 )
         );
         resampler_get_implementation = linker.downcallHandle(
-                lib.lookup("resampler_get_implementation").orElseThrow(),
+                lib.find("resampler_get_implementation").orElseThrow(),
                 FunctionDescriptor.of(
                         ValueLayout.ADDRESS,
                         ValueLayout.ADDRESS
@@ -97,7 +97,7 @@ public final class NativeResampler implements AutoCloseable {
     public NativeResampler(int channels, double initialSampleRate, int quality, boolean isRatioOftenChanging, boolean isSuddenRatioChange) {
         init();
         try {
-            pointer = (Addressable) resampler_init.invokeExact(channels, initialSampleRate, quality, isRatioOftenChanging, isSuddenRatioChange);
+            pointer = (MemorySegment) resampler_init.invokeExact(channels, initialSampleRate, quality, isRatioOftenChanging, isSuddenRatioChange);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -114,7 +114,7 @@ public final class NativeResampler implements AutoCloseable {
         }
     }
 
-    public int resample(@NotNull Addressable out, int outspace, @NotNull Addressable in, int incount, double ratio, boolean final_) {
+    public int resample(@NotNull MemorySegment out, int outspace, @NotNull MemorySegment in, int incount, double ratio, boolean final_) {
         try {
             return (int) resampler_resample.invokeExact(pointer, out, outspace, in, incount, ratio, final_);
         } catch (Throwable e) {
@@ -122,7 +122,7 @@ public final class NativeResampler implements AutoCloseable {
         }
     }
 
-    public int interleaved(@NotNull Addressable out, int outspace, @NotNull Addressable in, int incount, double ratio, boolean final_) {
+    public int interleaved(@NotNull MemorySegment out, int outspace, @NotNull MemorySegment in, int incount, double ratio, boolean final_) {
         try {
             return (int) resampler_resample_interleaved.invokeExact(pointer, out, outspace, in, incount, ratio, final_);
         } catch (Throwable e) {
@@ -158,7 +158,7 @@ public final class NativeResampler implements AutoCloseable {
     public static String getImplementation() {
         init();
         try {
-            return ((MemoryAddress) resampler_get_implementation.invokeExact()).getUtf8String(0L);
+            return ((MemorySegment) resampler_get_implementation.invokeExact()).getUtf8String(0L);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
