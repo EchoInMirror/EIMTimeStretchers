@@ -158,7 +158,8 @@ public final class NativeResampler implements AutoCloseable {
     public static String getImplementation() {
         init();
         try {
-            return ((MemorySegment) resampler_get_implementation.invokeExact()).getUtf8String(0L);
+            return ((MemorySegment) resampler_get_implementation.invokeExact())
+                    .reinterpret(255).getUtf8String(0L);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }

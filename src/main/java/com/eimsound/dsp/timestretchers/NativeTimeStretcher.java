@@ -139,7 +139,8 @@ public final class NativeTimeStretcher implements AutoCloseable {
     public static String @NotNull [] getAllTimeStretcherNames() {
         init();
         try {
-            return ((MemorySegment) get_all_time_stretchers.invokeExact()).getUtf8String(0L).split(",");
+            return ((MemorySegment) get_all_time_stretchers.invokeExact())
+                    .reinterpret(255).getUtf8String(0L).split(",");
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }

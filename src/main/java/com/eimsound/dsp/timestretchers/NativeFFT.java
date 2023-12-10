@@ -208,7 +208,8 @@ public final class NativeFFT implements AutoCloseable {
     public static String getDefaultImplementation() {
         init();
         try {
-            return ((MemorySegment) fft_get_default_implementation.invokeExact()).getUtf8String(0L);
+            return ((MemorySegment) fft_get_default_implementation.invokeExact())
+                    .reinterpret(255).getUtf8String(0L);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
