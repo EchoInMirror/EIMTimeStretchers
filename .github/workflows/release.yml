@@ -77,3 +77,36 @@ jobs:
           asset_name: libEIMTimeStretchers.dylib
 
 # Consider adding a Linux build here, I don't have a Linux machine to test on though
+  build-linux:
+    name: Build (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build
+      - uses: seanmiddleditch/gha-setup-ninja@master
+        run: |
+          mkdir build
+          cd build
+          cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ github.workspace }}/build/libEIMTimeStretchers.so
+          tag: ${{ github.ref }}
+          asset_name: libEIMTimeStretchers.so
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ github.workspace }}/build/libEIMTimeStretchers.so
+          tag: ${{ github.ref }}
+          asset_name: libEIMTimeStretchers.so
