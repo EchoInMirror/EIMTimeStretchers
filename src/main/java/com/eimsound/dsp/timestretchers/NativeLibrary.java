@@ -13,12 +13,13 @@ final class NativeLibrary {
     private static SymbolLookup lookup;
 
     static {
-        fileName = "libEIMTimeStretchers" + switch (System.getProperty("os.name")) {
-            case "Mac OS X" -> System.getProperty("os.arch", "").equals("aarch64") ? ".dylib" : "-x86.dylib";
-            case "Linux" -> ".so";
-            case "Windows" -> ".dll";
-            default -> throw new RuntimeException("Unsupported OS");
-        };
+        var os = System.getProperty("os.name");
+        var ext = "";
+        if (os.startsWith("Windows")) ext = ".dll";
+        else if ("Mac OS X".equalsIgnoreCase(os)) {
+            ext = System.getProperty("os.arch", "").equals("aarch64") ? ".dylib" : "-x86.dylib";
+        } else ext = ".so";
+        fileName = "libEIMTimeStretchers" + ext;
     }
 
     static SymbolLookup getLookup() {
