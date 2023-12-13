@@ -31,7 +31,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/build/Release/EIMTimeStretchers.dll
-          tag: ${{ github.ref }}
+          tag: ${{ github.event.release.tag_name }}
           asset_name: libEIMTimeStretchers.dll
 
   build-macos:
@@ -57,7 +57,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/build/libEIMTimeStretchers.dylib
-          tag: ${{ github.ref }}
+          tag: ${{ github.event.release.tag_name }}
           asset_name: libEIMTimeStretchers-x86_64.dylib
 
       - name: Build Apple Silicon binary
@@ -73,7 +73,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/build/libEIMTimeStretchers.dylib
-          tag: ${{ github.ref }}
+          tag: ${{ github.event.release.tag_name }}
           asset_name: libEIMTimeStretchers.dylib
 
 # Consider adding a Linux build here, I don't have a Linux machine to test on though
@@ -102,5 +102,5 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/build/libEIMTimeStretchers.so
-          tag: ${{ github.ref }}
+          tag: ${{ github.event.release.tag_name }}
           asset_name: libEIMTimeStretchers.so
