@@ -2,43 +2,51 @@ import java.security.MessageDigest
 
 plugins {
     id 'java'
-    id 'maven-publish'
 }
 
 group = 'com.eimsound.dsp.timestretchers'
 version = System.getenv('VERSION') ?: '0.0.0'
 
-sourceCompatibility = JavaVersion.VERSION_21
-targetCompatibility = JavaVersion.VERSION_21
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
 
-repositories {
-    mavenCentral()
-}
+    tasks.withType(JavaCompile).each {
+        it.options.compilerArgs.add('--enable-preview')
+    }
 
-java {
-    withSourcesJar()
-}
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 
-tasks.withType(JavaCompile).each {
-    it.options.compilerArgs.add('--enable-preview')
-}
+    java {
+        withSourcesJar()
+    }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
+            }
         }
+    }
+
+    task downloadLibs(type: Copy) {
+        downloadLib('-x86_64.dylib', 'macos')
+        downloadLib('.dylib', 'macos')
+        downloadLib('.dll', 'windows')
+        downloadLib('.so', 'linux')
+    }
+
+    tasks.withType(JavaCompile) {
+        dependsOn downloadLibs
     }
 }
 
-dependencies {
-    implementation 'org.jetbrains:annotations:24.0.0'
-}
-
-def downloadLib(String ext) {
-    def file = new File("$projectDir/src/main/resources/eim-time-stretchers/libEIMTimeStretchers$ext")
+def downloadLib(String ext, String source) {
+    def file = new File("$projectDir/$source/src/main/resources/eim-time-stretchers/libEIMTimeStretchers$ext")
     if (file.exists()) return
     file.parentFile.mkdirs()
+    println("Downloading: libEIMTimeStretchers$ext")
     new FileOutputStream(file).withCloseable { out ->
         new URL("https://github.com/EchoInMirror/EIMTimeStretchers/releases/latest/download/libEIMTimeStretchers$ext")
                 .withInputStream { input ->
@@ -61,15 +69,4 @@ static def sha256(File file) {
         }
     }
     return messageDigest.digest().collect { String.format("%02x", it) }.join()
-}
-
-task downloadLibs(type: Copy) {
-    downloadLib('-x86.dylib')
-    downloadLib('.dylib')
-    downloadLib('.dll')
-    downloadLib('.so')
-}
-
-tasks.withType(JavaCompile) {
-    dependsOn downloadLibs
 }

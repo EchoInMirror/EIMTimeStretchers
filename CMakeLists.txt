@@ -55,7 +55,7 @@ file(GLOB_RECURSE RUBBERBAND_SRC_FILES
 add_library(rubberband STATIC ${RUBBERBAND_SRC_FILES})
 target_link_libraries(rubberband PRIVATE samplerate)
 
-file(GLOB_RECURSE SRC_FILES lib/*.cpp lib/*.h)
+file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h)
 add_library(EIMTimeStretchers SHARED ${SRC_FILES})
 #add_executable(EIMTimeStretchers ${SRC_FILES})
 

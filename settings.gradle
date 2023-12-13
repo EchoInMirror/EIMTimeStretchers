@@ -1,1 +1,6 @@
 rootProject.name = 'EIMTimeStretchers'
+
+include 'common'
+include 'windows'
+include 'macos'
+include 'linux'

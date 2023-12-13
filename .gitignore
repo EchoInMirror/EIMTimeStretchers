@@ -4,4 +4,6 @@ build
 .idea
 .DS_Store
 .gradle
-src/main/resources
+/windows
+/macos
+/linux

@@ -17,7 +17,7 @@ final class NativeLibrary {
         var ext = "";
         if (os.startsWith("Windows")) ext = ".dll";
         else if ("Mac OS X".equalsIgnoreCase(os)) {
-            ext = System.getProperty("os.arch", "").equals("aarch64") ? ".dylib" : "-x86.dylib";
+            ext = System.getProperty("os.arch", "").equals("aarch64") ? ".dylib" : "-x86_64.dylib";
         } else ext = ".so";
         fileName = "libEIMTimeStretchers" + ext;
     }

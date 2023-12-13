@@ -44,7 +44,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Build
+      - name: Build Intel binary
         run: |
           mkdir build
           cd build
@@ -58,7 +58,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ github.workspace }}/build/libEIMTimeStretchers.dylib
           tag: ${{ github.ref }}
-          asset_name: libEIMTimeStretchers-x86.dylib
+          asset_name: libEIMTimeStretchers-x86_64.dylib
 
       - name: Build Apple Silicon binary
         run: |

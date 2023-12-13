@@ -18,7 +18,12 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.EchoInMirror:EIMTimeStretchers:<version>'
+    implementation 'com.github.EchoInMirror.EIMTimeStretchers:common:<version>'
+    
+    // Pick one of the following
+    implementation 'com.github.EchoInMirror.EIMTimeStretchers:windows:<version>'
+    implementation 'com.github.EchoInMirror.EIMTimeStretchers:macos:<version>'
+    implementation 'com.github.EchoInMirror.EIMTimeStretchers:linux:<version>'
 }
 
 tasks.withType(JavaCompile).each {
