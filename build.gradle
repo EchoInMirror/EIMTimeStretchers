@@ -4,14 +4,14 @@ plugins {
     id 'java'
 }
 
-group = 'com.eimsound.dsp.timestretchers'
+group = 'com.github.EchoInMirror.EIMTimeStretchers'
 version = System.getenv('VERSION') ?: '0.0.0'
 
 subprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
 
-    group = 'com.github.EchoInMirror'
+    group = 'com.github.EchoInMirror.EIMTimeStretchers'
     version = System.getenv('VERSION') ?: '0.0.0'
 
     tasks.withType(JavaCompile).each {
@@ -23,11 +23,11 @@ subprojects {
 
     publishing {
         publications {
-            maven(MavenPublication) {
-                groupId 'com.github.EchoInMirror'
-                artifactId 'EIMTimeStretchers-' + project.name
-                version project.version
+            mavenJava(MavenPublication) {
                 from components.java
+                groupId project.group
+                artifactId project.name
+                version project.version
             }
         }
     }
