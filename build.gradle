@@ -11,6 +11,9 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
 
+    group = 'com.github.EchoInMirror'
+    version = System.getenv('VERSION') ?: '0.0.0'
+
     tasks.withType(JavaCompile).each {
         it.options.compilerArgs.add('--enable-preview')
     }
@@ -18,13 +21,12 @@ subprojects {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 
-    java {
-        withSourcesJar()
-    }
-
     publishing {
         publications {
             maven(MavenPublication) {
+                groupId 'com.github.EchoInMirror'
+                artifactId 'EIMTimeStretchers-' + project.name
+                version project.version
                 from components.java
             }
         }
